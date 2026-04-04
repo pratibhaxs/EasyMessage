@@ -1,45 +1,6 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
-const PRIMARY = "#25D366";
-const PRIMARY_DARK = "#128C7E";
-
-const s = {
-  page: { minHeight: "100vh", background: "#f4f6f8", padding: "24px 16px 48px", boxSizing: "border-box" },
-  container: { maxWidth: 580, margin: "0 auto", fontFamily: "'Segoe UI', sans-serif" },
-  appTitle: { fontSize: 22, fontWeight: 700, color: PRIMARY_DARK, marginBottom: 4 },
-  appSub: { fontSize: 13, color: "#888", marginBottom: 24 },
-  card: { background: "#fff", borderRadius: 12, padding: "20px 18px", marginBottom: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.07)" },
-  sectionTitle: { fontSize: 13, fontWeight: 600, color: "#555", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 },
-  label: { display: "block", fontSize: 12, color: "#777", marginBottom: 4, fontWeight: 500 },
-  textarea: { width: "100%", minHeight: 90, padding: "10px 12px", fontSize: 15, border: "1.5px solid #e0e0e0", borderRadius: 8, resize: "vertical", boxSizing: "border-box", outline: "none", fontFamily: "inherit", lineHeight: 1.5 },
-  input: { width: "100%", padding: "11px 12px", fontSize: 15, border: "1.5px solid #e0e0e0", borderRadius: 8, boxSizing: "border-box", outline: "none", fontFamily: "inherit" },
-  inputError: { borderColor: "#e53935" },
-  errorText: { fontSize: 11, color: "#e53935", marginTop: 3 },
-  row2: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 },
-  field: { display: "flex", flexDirection: "column", marginBottom: 10 },
-  addBtn: { width: "100%", padding: "12px 0", fontSize: 15, fontWeight: 600, background: "#fff", border: `2px solid ${PRIMARY}`, color: PRIMARY, borderRadius: 8, cursor: "pointer", marginTop: 4 },
-  saveBtn: { width: "100%", padding: "12px 0", fontSize: 15, fontWeight: 600, background: "#1976D2", border: "none", color: "#fff", borderRadius: 8, cursor: "pointer", marginTop: 4 },
-  cancelBtn: { width: "100%", padding: "11px 0", fontSize: 15, fontWeight: 500, background: "#fff", border: "1.5px solid #ccc", color: "#555", borderRadius: 8, cursor: "pointer", marginTop: 8 },
-  contactItem: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "10px 12px", background: "#f9f9f9", borderRadius: 8, marginBottom: 8, gap: 8 },
-  contactInfo: { flex: 1, minWidth: 0 },
-  contactName: { fontSize: 14, fontWeight: 600, color: "#222" },
-  contactNum: { fontSize: 12, color: "#888", marginTop: 2 },
-  contactExtra: { fontSize: 11, color: "#aaa", marginTop: 2 },
-  iconBtn: { background: "none", border: "none", cursor: "pointer", padding: "4px 6px", borderRadius: 6, fontSize: 15, lineHeight: 1, flexShrink: 0 },
-  empty: { fontSize: 13, color: "#bbb", textAlign: "center", padding: "14px 0" },
-  previewBox: { background: "#e9fdf1", border: "1px solid #b2dfce", borderRadius: 8, padding: "12px 14px", fontSize: 14, color: "#1a5c40", lineHeight: 1.6, whiteSpace: "pre-wrap", wordBreak: "break-word" },
-  previewEmpty: { fontSize: 13, color: "#aaa", fontStyle: "italic" },
-  sendBtn: { width: "100%", padding: "14px 0", fontSize: 16, fontWeight: 700, background: PRIMARY, border: "none", color: "#fff", borderRadius: 10, cursor: "pointer" },
-  sendBtnDisabled: { background: "#ccc", cursor: "not-allowed" },
-  hint: { textAlign: "center", fontSize: 12, color: "#aaa", marginTop: 10, lineHeight: 1.5 },
-  linkItem: { display: "block", padding: "12px 14px", marginBottom: 8, background: "#e9fdf1", border: `1px solid ${PRIMARY}`, borderRadius: 8, color: PRIMARY_DARK, fontWeight: 600, fontSize: 14, textDecoration: "none" },
-  csvBtn: { width: "100%", padding: "11px 0", fontSize: 14, fontWeight: 500, background: "#f0f4ff", border: "1.5px dashed #90a4d4", color: "#3a5bbf", borderRadius: 8, cursor: "pointer", marginTop: 8 },
-  tag: { display: "inline-block", background: "#e8f5e9", color: "#2e7d32", fontSize: 11, padding: "2px 7px", borderRadius: 10, marginRight: 4, marginTop: 3, fontFamily: "monospace" },
-  divider: { border: "none", borderTop: "1px solid #eee", margin: "12px 0" },
-  detectedVars: { fontSize: 12, color: "#888", marginTop: 8 },
-};
-
-// ── helpers ──────────────────────────────────────────────────────────────────
+// ── helpers ───────────────────────────────────────────────────────────────────
 
 function formatNumber(raw) {
   const digits = raw.replace(/\D/g, "");
@@ -55,24 +16,182 @@ function personalise(template, contact) {
 }
 
 function detectVars(template) {
-  const matches = [...template.matchAll(/\{(\w+)\}/g)];
-  return [...new Set(matches.map((m) => m[1]))];
+  return [...new Set([...template.matchAll(/\{(\w+)\}/g)].map((m) => m[1]))];
 }
 
-// ── component ─────────────────────────────────────────────────────────────────
+// ── sub-components ────────────────────────────────────────────────────────────
+
+function StepBar({ current }) {
+  const steps = ["Write Message", "Add Contacts", "Preview", "Send"];
+  return (
+    <div className="flex items-center justify-between mb-8 px-1">
+      {steps.map((label, i) => {
+        const num = i + 1;
+        const done = num < current;
+        const active = num === current;
+        return (
+          <div key={num} className="flex items-center flex-1">
+            <div className="flex flex-col items-center">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all
+                ${done ? "bg-green-500 text-white" : active ? "bg-green-600 text-white ring-4 ring-green-200 dark:ring-green-900" : "bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500"}`}>
+                {done ? "✓" : num}
+              </div>
+              <span className={`mt-1 text-xs font-medium text-center leading-tight hidden sm:block
+                ${active ? "text-green-600 dark:text-green-400" : "text-gray-400 dark:text-gray-500"}`}>
+                {label}
+              </span>
+            </div>
+            {i < steps.length - 1 && (
+              <div className={`flex-1 h-0.5 mx-2 rounded transition-all
+                ${done ? "bg-green-400" : "bg-gray-200 dark:bg-gray-700"}`} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function Card({ children, className = "" }) {
+  return (
+    <div className={`bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 mb-4 ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+function SectionTitle({ children }) {
+  return (
+    <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-3">
+      {children}
+    </p>
+  );
+}
+
+function PrimaryBtn({ children, onClick, disabled, loading, className = "" }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled || loading}
+      className={`w-full py-3 px-4 rounded-xl font-semibold text-sm transition-all
+        ${disabled || loading
+          ? "bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed"
+          : "bg-green-500 hover:bg-green-600 active:scale-[0.98] text-white shadow-sm hover:shadow-md"}
+        ${className}`}
+    >
+      {loading ? (
+        <span className="flex items-center justify-center gap-2">
+          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+          </svg>
+          Generating links...
+        </span>
+      ) : children}
+    </button>
+  );
+}
+
+function SecondaryBtn({ children, onClick, className = "" }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`py-2 px-4 rounded-xl text-sm font-medium border border-gray-200 dark:border-gray-600
+        text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700
+        active:scale-[0.98] transition-all ${className}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function OutlineBtn({ children, onClick, className = "" }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full py-3 px-4 rounded-xl text-sm font-semibold border-2 border-green-500
+        text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20
+        active:scale-[0.98] transition-all ${className}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+// WhatsApp-style chat bubble with highlighted variables
+function ChatBubble({ message, template }) {
+  const vars = detectVars(template);
+  const parts = [];
+  let remaining = message;
+  let idx = 0;
+
+  // find which values in the message came from variable replacements
+  vars.forEach((v) => {
+    const placeholder = `{${v}}`;
+    // check if the original template had this var replaced
+  });
+
+  // split message by replaced variable values to highlight them
+  const regex = new RegExp(`(${vars.map((v) => `\\{${v}\\}`).join("|")})`, "g");
+  const rawParts = template.split(regex);
+
+  let cursor = 0;
+  return (
+    <div className="flex justify-end">
+      <div className="relative max-w-xs sm:max-w-sm bg-green-100 dark:bg-green-900/50 rounded-2xl rounded-tr-sm px-4 py-3 shadow-sm">
+        <p className="text-sm text-gray-800 dark:text-gray-100 whitespace-pre-wrap leading-relaxed">
+          {rawParts.map((part, i) => {
+            const isVar = /^\{(\w+)\}$/.test(part);
+            if (isVar) {
+              const key = part.slice(1, -1);
+              return (
+                <span key={i} className="bg-green-300 dark:bg-green-700 text-green-900 dark:text-green-100 rounded px-1 font-medium text-xs">
+                  {message.includes(part) ? part : (() => {
+                    // extract the replaced value from the personalised message
+                    return part;
+                  })()}
+                </span>
+              );
+            }
+            return <span key={i}>{part}</span>;
+          })}
+        </p>
+        <div className="flex items-center justify-end gap-1 mt-1">
+          <span className="text-[10px] text-gray-400 dark:text-gray-500">
+            {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+          </span>
+          <span className="text-green-500 text-xs">✓✓</span>
+        </div>
+        <div className="absolute top-0 right-[-6px] w-3 h-3 bg-green-100 dark:bg-green-900/50"
+          style={{ clipPath: "polygon(0 0, 0 100%, 100% 0)" }} />
+      </div>
+    </div>
+  );
+}
+
+// ── main app ──────────────────────────────────────────────────────────────────
 
 export default function App() {
+  const [dark, setDark] = useState(() => localStorage.getItem("theme") === "dark");
   const [template, setTemplate] = useState("");
   const [contacts, setContacts] = useState([]);
   const [links, setLinks] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [errors, setErrors] = useState({});
   const [fields, setFields] = useState({ name: "", number: "" });
-
+  const [loading, setLoading] = useState(false);
   const fileRef = useRef();
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", dark);
+    localStorage.setItem("theme", dark ? "dark" : "light");
+  }, [dark]);
 
   const templateVars = detectVars(template);
   const extraVars = templateVars.filter((v) => v !== "name" && v !== "number");
+
+  // current step logic
+  const currentStep = !template.trim() ? 1 : contacts.length === 0 ? 2 : links.length === 0 ? 3 : 4;
 
   function setField(key, val) {
     setFields((f) => ({ ...f, [key]: val }));
@@ -89,9 +208,9 @@ export default function App() {
     const errs = {};
     if (!fields.name.trim()) errs.name = "Name is required";
     const digits = (fields.number || "").replace(/\D/g, "");
-    if (!digits) errs.number = "Phone number is required";
+    if (!digits) errs.number = "Number is required";
     else if (digits.length !== 10 && !(digits.startsWith("91") && digits.length === 12))
-      errs.number = "Enter a valid 10-digit Indian number";
+      errs.number = "Enter a valid 10-digit number";
     return errs;
   }
 
@@ -129,8 +248,6 @@ export default function App() {
     if (editingId === id) cancelEdit();
   }
 
-  // ── CSV upload ──
-
   function handleCSV(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -138,55 +255,42 @@ export default function App() {
     reader.onload = (ev) => {
       const lines = ev.target.result.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
       if (lines.length < 2) { alert("CSV is empty or has no data rows."); return; }
-
       const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
       const nameIdx = headers.indexOf("name");
       const numIdx = headers.indexOf("number");
-
-      if (nameIdx === -1 || numIdx === -1) {
-        alert("CSV must have 'name' and 'number' columns in the first row.");
-        return;
-      }
-
-      const valid = [];
-      const invalid = [];
-
+      if (nameIdx === -1 || numIdx === -1) { alert("CSV must have 'name' and 'number' columns."); return; }
+      const valid = [], invalid = [];
       lines.slice(1).forEach((line, i) => {
         const cols = line.split(",").map((c) => c.trim());
         const name = cols[nameIdx] || "";
         const number = cols[numIdx] || "";
         const digits = number.replace(/\D/g, "");
-
         if (!name) { invalid.push(`Row ${i + 2}: missing name`); return; }
         if (digits.length !== 10 && !(digits.startsWith("91") && digits.length === 12)) {
           invalid.push(`Row ${i + 2}: invalid number "${number}"`); return;
         }
-
         const extra = {};
-        headers.forEach((h, idx) => {
-          if (h !== "name" && h !== "number") extra[h] = cols[idx] || "";
-        });
-
+        headers.forEach((h, idx) => { if (h !== "name" && h !== "number") extra[h] = cols[idx] || ""; });
         valid.push({ id: Date.now() + Math.random(), name, number, ...extra });
       });
-
-      if (invalid.length > 0) alert(`Some rows were skipped:\n${invalid.join("\n")}`);
+      if (invalid.length > 0) alert(`Skipped rows:\n${invalid.join("\n")}`);
       if (valid.length > 0) { setContacts((cs) => [...cs, ...valid]); setLinks([]); }
-      else alert("No valid contacts found in CSV.");
+      else alert("No valid contacts found.");
     };
     reader.readAsText(file);
     e.target.value = "";
   }
 
-  // ── send ──
-
   function sendMessages() {
-    const generated = contacts.map((contact) => {
-      const msg = personalise(template, contact);
-      const num = formatNumber(contact.number);
-      return { name: contact.name, url: `https://wa.me/${num}?text=${encodeURIComponent(msg)}` };
-    });
-    setLinks(generated);
+    setLoading(true);
+    setTimeout(() => {
+      const generated = contacts.map((contact) => ({
+        name: contact.name,
+        url: `https://wa.me/${formatNumber(contact.number)}?text=${encodeURIComponent(personalise(template, contact))}`,
+      }));
+      setLinks(generated);
+      setLoading(false);
+    }, 800);
   }
 
   const preview = template.trim() && contacts.length > 0
@@ -195,70 +299,102 @@ export default function App() {
 
   const isDisabled = !template.trim() || contacts.length === 0;
 
-  return (
-    <div style={s.page}>
-      <div style={s.container}>
-        <div style={s.appTitle}>EasyMessage</div>
-        <div style={s.appSub}>Send personalised WhatsApp messages</div>
+  // ── render ──
 
-        {/* Template */}
-        <div style={s.card}>
-          <div style={s.sectionTitle}>Message Template</div>
-          <label style={s.label}>Use variables like {"{name}"}, {"{order_id}"}, {"{amount}"}</label>
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+
+      {/* Navbar */}
+      <header className="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 shadow-sm">
+        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-green-500 flex items-center justify-center text-white text-sm font-bold">W</div>
+            <span className="font-semibold text-gray-800 dark:text-white text-sm">Smart WA Sender</span>
+          </div>
+          <button
+            onClick={() => setDark((d) => !d)}
+            className="p-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-base"
+            title="Toggle dark mode"
+          >
+            {dark ? "☀️" : "🌙"}
+          </button>
+        </div>
+      </header>
+
+      <main className="max-w-2xl mx-auto px-4 py-6">
+
+        {/* Step Bar */}
+        <StepBar current={currentStep} />
+
+        {/* 1 — Message Template */}
+        <Card>
+          <SectionTitle>Step 1 — Message Template</SectionTitle>
+          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+            Use variables like <code className="bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 px-1 rounded">{"{name}"}</code>, <code className="bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 px-1 rounded">{"{order_id}"}</code>, <code className="bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 px-1 rounded">{"{amount}"}</code>
+          </label>
           <textarea
-            style={s.textarea}
-            placeholder={"Hi {name}, your order {order_id} of ₹{amount} is ready!"}
+            className="w-full min-h-[96px] mt-1 px-3 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-gray-600
+              bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100
+              focus:outline-none focus:ring-2 focus:ring-green-400 resize-y leading-relaxed transition"
+            placeholder={"Hi {name}, your order {order_id} of ₹{amount} is confirmed!"}
             value={template}
             onChange={(e) => { setTemplate(e.target.value); setLinks([]); }}
           />
           {templateVars.length > 0 && (
-            <div style={s.detectedVars}>
-              Detected variables:&nbsp;
+            <div className="mt-2 flex flex-wrap gap-1 items-center">
+              <span className="text-xs text-gray-400 dark:text-gray-500">Detected:</span>
               {templateVars.map((v) => (
-                <span key={v} style={s.tag}>{`{${v}}`}</span>
+                <span key={v} className="text-xs bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full font-mono">
+                  {`{${v}}`}
+                </span>
               ))}
             </div>
           )}
-        </div>
+        </Card>
 
-        {/* Add / Edit */}
-        <div style={s.card}>
-          <div style={s.sectionTitle}>{editingId ? "Edit Contact" : "Add Contact"}</div>
+        {/* 2 — Add / Edit Contact */}
+        <Card>
+          <SectionTitle>{editingId ? "Edit Contact" : "Step 2 — Add Contact"}</SectionTitle>
 
-          <div style={s.row2}>
-            <div style={s.field}>
-              <label style={s.label}>Name *</label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+            <div>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Name *</label>
               <input
-                style={{ ...s.input, ...(errors.name ? s.inputError : {}) }}
+                className={`w-full px-3 py-2.5 text-sm rounded-xl border bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100
+                  focus:outline-none focus:ring-2 focus:ring-green-400 transition
+                  ${errors.name ? "border-red-400" : "border-gray-200 dark:border-gray-600"}`}
                 placeholder="e.g. Rahul"
                 value={fields.name || ""}
                 onChange={(e) => setField("name", e.target.value)}
               />
-              {errors.name && <span style={s.errorText}>{errors.name}</span>}
+              {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
             </div>
-            <div style={s.field}>
-              <label style={s.label}>Phone number *</label>
+            <div>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Phone number *</label>
               <input
-                style={{ ...s.input, ...(errors.number ? s.inputError : {}) }}
+                className={`w-full px-3 py-2.5 text-sm rounded-xl border bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100
+                  focus:outline-none focus:ring-2 focus:ring-green-400 transition
+                  ${errors.number ? "border-red-400" : "border-gray-200 dark:border-gray-600"}`}
                 placeholder="10-digit number"
                 value={fields.number || ""}
                 maxLength={12}
                 onChange={(e) => setField("number", e.target.value)}
               />
-              {errors.number && <span style={s.errorText}>{errors.number}</span>}
+              {errors.number && <p className="text-xs text-red-500 mt-1">{errors.number}</p>}
             </div>
           </div>
 
           {extraVars.length > 0 && (
             <>
-              <div style={s.divider} />
-              <div style={{ ...s.label, marginBottom: 10 }}>Extra fields detected from template</div>
-              <div style={s.row2}>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mb-2 mt-1">Extra fields from template</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                 {extraVars.map((v) => (
-                  <div key={v} style={s.field}>
-                    <label style={s.label}>{v}</label>
+                  <div key={v}>
+                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{v}</label>
                     <input
-                      style={s.input}
+                      className="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-gray-600
+                        bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100
+                        focus:outline-none focus:ring-2 focus:ring-green-400 transition"
                       placeholder={v === "amount" ? "e.g. 499" : v === "order_id" ? "e.g. ORD001" : `Enter ${v}`}
                       value={fields[v] || ""}
                       onChange={(e) => setField(v, e.target.value)}
@@ -269,92 +405,140 @@ export default function App() {
             </>
           )}
 
-          <button style={editingId ? s.saveBtn : s.addBtn} onClick={addOrSave}>
-            {editingId ? "Save changes" : "+ Add contact"}
-          </button>
-          {editingId && <button style={s.cancelBtn} onClick={cancelEdit}>Cancel</button>}
-
-          <div style={s.divider} />
-          <input type="file" accept=".csv" ref={fileRef} style={{ display: "none" }} onChange={handleCSV} />
-          <button style={s.csvBtn} onClick={() => fileRef.current.click()}>
-            ⬆ Upload CSV (name, number, order_id, amount ...)
-          </button>
-          <div style={{ fontSize: 11, color: "#aaa", marginTop: 6 }}>
-            First row must be headers. Extra columns map to template variables automatically.
-          </div>
-        </div>
-
-        {/* Contact List */}
-        <div style={s.card}>
-          <div style={s.sectionTitle}>Contacts ({contacts.length})</div>
-          {contacts.length === 0 ? (
-            <div style={s.empty}>No contacts added yet</div>
-          ) : contacts.map((c) => {
-            const extra = Object.entries(c).filter(([k]) => !["id", "name", "number"].includes(k));
-            return (
-              <div key={c.id} style={{
-                ...s.contactItem,
-                background: editingId === c.id ? "#fff8e1" : "#f9f9f9",
-                border: editingId === c.id ? "1.5px solid #FFC107" : "1.5px solid transparent",
-              }}>
-                <div style={s.contactInfo}>
-                  <div style={s.contactName}>{c.name}</div>
-                  <div style={s.contactNum}>{c.number}</div>
-                  {extra.length > 0 && (
-                    <div style={s.contactExtra}>
-                      {extra.map(([k, v]) => `${k}: ${v}`).join(" · ")}
-                    </div>
-                  )}
-                </div>
-                <button style={{ ...s.iconBtn, color: "#1976D2" }} onClick={() => startEdit(c)}>✏️</button>
-                <button style={{ ...s.iconBtn, color: "#e53935" }} onClick={() => deleteContact(c.id)}>🗑️</button>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Preview */}
-        <div style={s.card}>
-          <div style={s.sectionTitle}>Preview</div>
-          <div style={{ ...s.label, marginBottom: 8 }}>
-            Message for {contacts[0]?.name || "first contact"}
-          </div>
-          <div style={s.previewBox}>
-            {preview
-              ? preview
-              : <span style={s.previewEmpty}>
-                  {!template.trim()
-                    ? "Write a message template above to see preview"
-                    : "Add a contact to see preview"}
-                </span>
+          <div className="flex gap-2 mt-1">
+            {editingId
+              ? <>
+                  <PrimaryBtn onClick={addOrSave} className="flex-1">Save changes</PrimaryBtn>
+                  <SecondaryBtn onClick={cancelEdit} className="flex-1">Cancel</SecondaryBtn>
+                </>
+              : <OutlineBtn onClick={addOrSave}>+ Add contact</OutlineBtn>
             }
           </div>
-        </div>
 
-        {/* Send Button */}
-        <button
-          style={{ ...s.sendBtn, ...(isDisabled ? s.sendBtnDisabled : {}) }}
-          onClick={sendMessages}
-          disabled={isDisabled}
-        >
-          Send messages →
-        </button>
-        <p style={s.hint}>
-          Messages will open in WhatsApp.{"\n"}You must press send manually for each contact.
-        </p>
-
-        {/* WhatsApp Links */}
-        {links.length > 0 && (
-          <div style={{ ...s.card, marginTop: 16 }}>
-            <div style={s.sectionTitle}>Open in WhatsApp</div>
-            {links.map((link, i) => (
-              <a key={i} href={link.url} target="_blank" rel="noreferrer" style={s.linkItem}>
-                Send to {link.name} →
-              </a>
-            ))}
+          <div className="border-t border-gray-100 dark:border-gray-700 mt-4 pt-4">
+            <input type="file" accept=".csv" ref={fileRef} className="hidden" onChange={handleCSV} />
+            <button
+              onClick={() => fileRef.current.click()}
+              className="w-full py-2.5 px-4 rounded-xl text-sm font-medium border-2 border-dashed
+                border-blue-300 dark:border-blue-700 text-blue-500 dark:text-blue-400
+                hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+            >
+              ⬆ Upload CSV (name, number, ...)
+            </button>
+            <p className="text-center text-xs text-gray-400 dark:text-gray-500 mt-1.5">
+              First row must be headers. Extra columns map to template variables.
+            </p>
           </div>
-        )}
-      </div>
+        </Card>
+
+        {/* 3 — Contact List */}
+        <Card>
+          <div className="flex items-center justify-between mb-3">
+            <SectionTitle>Contacts</SectionTitle>
+            <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-full font-medium">
+              {contacts.length}
+            </span>
+          </div>
+
+          {contacts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+              <div className="text-4xl mb-3">👥</div>
+              <p className="text-sm font-medium text-gray-400 dark:text-gray-500">No contacts added yet</p>
+              <p className="text-xs text-gray-300 dark:text-gray-600 mt-1">Add contacts above or upload a CSV</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-700">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 dark:bg-gray-700/50 text-left">
+                    <th className="px-4 py-2.5 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Name</th>
+                    <th className="px-4 py-2.5 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Number</th>
+                    <th className="px-4 py-2.5 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide hidden sm:table-cell">Extra</th>
+                    <th className="px-4 py-2.5 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                  {contacts.map((c) => {
+                    const extra = Object.entries(c).filter(([k]) => !["id", "name", "number"].includes(k));
+                    return (
+                      <tr key={c.id}
+                        className={`transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/40
+                          ${editingId === c.id ? "bg-amber-50 dark:bg-amber-900/10" : ""}`}>
+                        <td className="px-4 py-3 font-medium text-gray-800 dark:text-gray-100">{c.name}</td>
+                        <td className="px-4 py-3 text-gray-500 dark:text-gray-400 font-mono text-xs">{c.number}</td>
+                        <td className="px-4 py-3 text-gray-400 dark:text-gray-500 text-xs hidden sm:table-cell">
+                          {extra.map(([k, v]) => `${k}: ${v}`).join(" · ") || "—"}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <button onClick={() => startEdit(c)}
+                              className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-xs">
+                              ✏️
+                            </button>
+                            <button onClick={() => deleteContact(c.id)}
+                              className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-xs">
+                              🗑️
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+
+        {/* 4 — Preview */}
+        <Card>
+          <SectionTitle>Step 3 — Preview</SectionTitle>
+          {preview ? (
+            <div className="bg-gray-100 dark:bg-gray-900 rounded-2xl p-4">
+              <p className="text-xs text-gray-400 dark:text-gray-500 mb-3 text-center">
+                Previewing for <span className="font-medium text-gray-600 dark:text-gray-300">{contacts[0]?.name}</span>
+              </p>
+              <ChatBubble message={preview} template={template} />
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-10 text-center bg-gray-50 dark:bg-gray-700/30 rounded-2xl">
+              <div className="text-4xl mb-3">💬</div>
+              <p className="text-sm font-medium text-gray-400 dark:text-gray-500">No preview available</p>
+              <p className="text-xs text-gray-300 dark:text-gray-600 mt-1">
+                {!template.trim() ? "Write a message template first" : "Add at least one contact"}
+              </p>
+            </div>
+          )}
+        </Card>
+
+        {/* 5 — Send */}
+        <Card>
+          <SectionTitle>Step 4 — Send</SectionTitle>
+          <PrimaryBtn onClick={sendMessages} disabled={isDisabled} loading={loading}>
+            Send messages →
+          </PrimaryBtn>
+          <p className="text-center text-xs text-gray-400 dark:text-gray-500 mt-2 leading-relaxed">
+            Messages will open in WhatsApp. You must press send manually for each contact.
+          </p>
+
+          {links.length > 0 && (
+            <div className="mt-4 space-y-2">
+              <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3">Open in WhatsApp</p>
+              {links.map((link, i) => (
+                <a key={i} href={link.url} target="_blank" rel="noreferrer"
+                  className="flex items-center justify-between w-full px-4 py-3 rounded-xl
+                    bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800
+                    text-green-700 dark:text-green-400 font-medium text-sm
+                    hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors">
+                  <span>Send to {link.name}</span>
+                  <span className="text-green-500">→</span>
+                </a>
+              ))}
+            </div>
+          )}
+        </Card>
+
+      </main>
     </div>
   );
 }
