@@ -1,10 +1,36 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import App from './App.jsx'
-import './index.css'
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import "./index.css";
+import { AuthProvider, useAuth } from "./AuthContext";
+import AuthPage from "./AuthPage";
+import App from "./App";
 
-createRoot(document.getElementById('root')).render(
+function Root() {
+  const { user } = useAuth();
+
+  // Still detecting auth state
+  if (user === undefined) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <svg className="animate-spin h-8 w-8 text-green-500" viewBox="0 0 24 24" fill="none">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+        </svg>
+      </div>
+    );
+  }
+
+  // Not logged in → show auth page
+  if (!user) return <AuthPage />;
+
+  // Logged in → show main app
+  return <App />;
+}
+
+createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <App />
+    <AuthProvider>
+      <Root />
+    </AuthProvider>
   </StrictMode>
-)
+);
