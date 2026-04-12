@@ -1,59 +1,53 @@
 import {
-  collection,
-  addDoc,
-  getDocs,
-  deleteDoc,
-  doc,
-  updateDoc,
-  serverTimestamp,
-  query,
-  orderBy,
+  collection, addDoc, getDocs, deleteDoc,
+  doc, updateDoc, serverTimestamp, query, orderBy,
 } from "firebase/firestore";
 import { db } from "./firebase";
 
 // ── Contacts ──────────────────────────────────────────────────────────────────
-// Path: users/{userId}/contacts/{contactId}
-
 export async function fetchContacts(userId) {
-  const ref = collection(db, "users", userId, "contacts");
-  const q = query(ref, orderBy("createdAt", "asc"));
+  const q = query(collection(db, "users", userId, "contacts"), orderBy("createdAt", "asc"));
   const snap = await getDocs(q);
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
-
 export async function addContact(userId, contact) {
-  const ref = collection(db, "users", userId, "contacts");
-  const docRef = await addDoc(ref, { ...contact, createdAt: serverTimestamp() });
-  return docRef.id;
+  const ref = await addDoc(collection(db, "users", userId, "contacts"), { ...contact, createdAt: serverTimestamp() });
+  return ref.id;
 }
-
 export async function updateContact(userId, contactId, data) {
-  const ref = doc(db, "users", userId, "contacts", contactId);
-  await updateDoc(ref, data);
+  await updateDoc(doc(db, "users", userId, "contacts", contactId), data);
 }
-
 export async function deleteContact(userId, contactId) {
-  const ref = doc(db, "users", userId, "contacts", contactId);
-  await deleteDoc(ref);
+  await deleteDoc(doc(db, "users", userId, "contacts", contactId));
 }
 
 // ── Templates ─────────────────────────────────────────────────────────────────
-// Path: users/{userId}/templates/{templateId}
-
 export async function fetchTemplates(userId) {
-  const ref = collection(db, "users", userId, "templates");
-  const q = query(ref, orderBy("createdAt", "desc"));
+  const q = query(collection(db, "users", userId, "templates"), orderBy("createdAt", "desc"));
   const snap = await getDocs(q);
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
-
 export async function addTemplate(userId, text) {
-  const ref = collection(db, "users", userId, "templates");
-  const docRef = await addDoc(ref, { text, createdAt: serverTimestamp() });
-  return docRef.id;
+  const ref = await addDoc(collection(db, "users", userId, "templates"), { text, createdAt: serverTimestamp() });
+  return ref.id;
+}
+export async function updateTemplate(userId, templateId, text) {
+  await updateDoc(doc(db, "users", userId, "templates", templateId), { text });
+}
+export async function deleteTemplate(userId, templateId) {
+  await deleteDoc(doc(db, "users", userId, "templates", templateId));
 }
 
-export async function deleteTemplate(userId, templateId) {
-  const ref = doc(db, "users", userId, "templates", templateId);
-  await deleteDoc(ref);
+// ── Groups ────────────────────────────────────────────────────────────────────
+export async function fetchGroups(userId) {
+  const q = query(collection(db, "users", userId, "groups"), orderBy("createdAt", "asc"));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+export async function addGroup(userId, name) {
+  const ref = await addDoc(collection(db, "users", userId, "groups"), { name, createdAt: serverTimestamp() });
+  return ref.id;
+}
+export async function deleteGroup(userId, groupId) {
+  await deleteDoc(doc(db, "users", userId, "groups", groupId));
 }

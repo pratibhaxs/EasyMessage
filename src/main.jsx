@@ -2,13 +2,13 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import { AuthProvider, useAuth } from "./AuthContext";
+import { AppProvider } from "./AppContext";
 import AuthPage from "./AuthPage";
 import App from "./App";
 
 function Root() {
   const { user } = useAuth();
 
-  // Still detecting auth state
   if (user === undefined) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
@@ -20,11 +20,13 @@ function Root() {
     );
   }
 
-  // Not logged in → show auth page
   if (!user) return <AuthPage />;
 
-  // Logged in → show main app
-  return <App />;
+  return (
+    <AppProvider>
+      <App />
+    </AppProvider>
+  );
 }
 
 createRoot(document.getElementById("root")).render(
