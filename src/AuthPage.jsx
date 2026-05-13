@@ -3,135 +3,101 @@ import { useAuth } from "./AuthContext";
 
 export default function AuthPage() {
   const { login, signup } = useAuth();
-  const [mode, setMode] = useState("login"); // "login" | "signup"
+  const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState("");
+
+  function friendlyError(code) {
+    const map = {
+      "auth/user-not-found": "No account found with this email.",
+      "auth/wrong-password": "Incorrect password.",
+      "auth/email-already-in-use": "Email already registered.",
+      "auth/invalid-email": "Invalid email address.",
+      "auth/too-many-requests": "Too many attempts. Try later.",
+      "auth/invalid-credential": "Invalid email or password.",
+    };
+    return map[code] || "Something went wrong.";
+  }
 
   async function handleSubmit() {
     setError("");
-    setSuccess("");
-    if (!email.trim() || !password.trim()) {
-      setError("Please enter both email and password.");
-      return;
-    }
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
-      return;
-    }
+    if (!email.trim() || !password.trim()) { setError("Please fill in all fields."); return; }
+    if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
     setLoading(true);
     try {
-      if (mode === "signup") {
-        await signup(email, password);
-        setSuccess("Account created! You are now logged in.");
-      } else {
-        await login(email, password);
-        // App.jsx will detect auth state change and render main app
-      }
-    } catch (err) {
-      setError(friendlyError(err.code));
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function friendlyError(code) {
-    switch (code) {
-      case "auth/user-not-found": return "No account found with this email.";
-      case "auth/wrong-password": return "Incorrect password.";
-      case "auth/email-already-in-use": return "This email is already registered.";
-      case "auth/invalid-email": return "Please enter a valid email address.";
-      case "auth/too-many-requests": return "Too many attempts. Please try again later.";
-      case "auth/invalid-credential": return "Invalid email or password.";
-      default: return "Something went wrong. Please try again.";
-    }
+      mode === "signup" ? await signup(email, password) : await login(email, password);
+    } catch (err) { setError(friendlyError(err.code)); }
+    finally { setLoading(false); }
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center px-4"
+      style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+      <div className="w-full max-w-[340px]">
 
         {/* Logo */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-green-500 flex items-center justify-center text-white text-xl font-bold mb-3 shadow-md">
-            W
-          </div>
-          <h1 className="text-xl font-bold text-gray-800 dark:text-white">Smart WA Sender</h1>
-          <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
-            {mode === "login" ? "Sign in to your account" : "Create a new account"}
-          </p>
+        <div className="flex items-center gap-2 mb-8 justify-center">
+          <div className="w-7 h-7 rounded-lg bg-emerald-500 flex items-center justify-center text-white text-xs font-bold">W</div>
+          <span className="text-[15px] font-semibold text-zinc-800 dark:text-white">WA Sender</span>
         </div>
 
         {/* Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6">
+          <h1 className="text-[15px] font-semibold text-zinc-800 dark:text-zinc-100 mb-1">
+            {mode === "login" ? "Sign in" : "Create account"}
+          </h1>
+          <p className="text-[12px] text-zinc-400 mb-5">
+            {mode === "login" ? "Welcome back." : "Start sending personalised messages."}
+          </p>
 
-          {/* Tab Toggle */}
-          <div className="flex rounded-xl bg-gray-100 dark:bg-gray-700 p-1 mb-5">
+          {/* Toggle */}
+          <div className="flex bg-zinc-100 dark:bg-zinc-800 rounded-md p-0.5 mb-5 h-7">
             {["login", "signup"].map((m) => (
-              <button key={m} onClick={() => { setMode(m); setError(""); setSuccess(""); }}
-                className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all
+              <button key={m} onClick={() => { setMode(m); setError(""); }}
+                className={`flex-1 rounded text-xs font-medium transition-all duration-100
                   ${mode === m
-                    ? "bg-white dark:bg-gray-600 text-gray-800 dark:text-white shadow-sm"
-                    : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"}`}>
+                    ? "bg-white dark:bg-zinc-700 text-zinc-800 dark:text-white shadow-sm"
+                    : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"}`}>
                 {m === "login" ? "Sign in" : "Sign up"}
               </button>
             ))}
           </div>
 
-          {/* Fields */}
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Email</label>
-              <input
-                type="email"
-                className="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-gray-600
-                  bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100
-                  focus:outline-none focus:ring-2 focus:ring-green-400 transition"
-                placeholder="you@example.com"
-                value={email}
+              <label className="block text-[11px] font-medium text-zinc-500 uppercase tracking-wide mb-1">Email</label>
+              <input type="email" placeholder="you@example.com" value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-              />
+                className="w-full h-8 px-2.5 text-[13px] rounded-md border border-zinc-300 dark:border-zinc-700
+                  bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400
+                  focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-all" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Password</label>
-              <input
-                type="password"
-                className="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-gray-600
-                  bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100
-                  focus:outline-none focus:ring-2 focus:ring-green-400 transition"
-                placeholder="Min. 6 characters"
-                value={password}
+              <label className="block text-[11px] font-medium text-zinc-500 uppercase tracking-wide mb-1">Password</label>
+              <input type="password" placeholder="Min. 6 characters" value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-              />
+                className="w-full h-8 px-2.5 text-[13px] rounded-md border border-zinc-300 dark:border-zinc-700
+                  bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400
+                  focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400 transition-all" />
             </div>
           </div>
 
-          {/* Error / Success */}
           {error && (
-            <div className="mt-3 px-3 py-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
-              <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
-            </div>
-          )}
-          {success && (
-            <div className="mt-3 px-3 py-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
-              <p className="text-xs text-green-600 dark:text-green-400">{success}</p>
-            </div>
+            <p className="mt-3 text-[12px] text-red-500 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md px-3 py-2">
+              {error}
+            </p>
           )}
 
-          {/* Submit */}
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
-            className={`w-full mt-4 py-3 rounded-xl text-sm font-semibold transition-all
+          <button onClick={handleSubmit} disabled={loading}
+            className={`w-full mt-4 h-8 rounded-md text-xs font-medium transition-all duration-100
               ${loading
-                ? "bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed"
-                : "bg-green-500 hover:bg-green-600 text-white shadow-sm hover:shadow-md active:scale-[0.98]"}`}
-          >
-            {loading ? "Please wait..." : mode === "login" ? "Sign in →" : "Create account →"}
+                ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed"
+                : "bg-emerald-500 hover:bg-emerald-600 text-white active:scale-[0.98]"}`}>
+            {loading ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
           </button>
         </div>
       </div>
