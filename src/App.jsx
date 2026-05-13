@@ -60,16 +60,18 @@ const NAV = [
 export default function App() {
   const { user, logout } = useAuth();
   const { contacts, loading } = useApp();
-  const [dark, setDark] = useState(() => localStorage.getItem("theme") === "dark");
+  const [dark, setDark] = useState(
+  () => document.documentElement.classList.contains("dark"));
   const [section, setSection] = useState("send");
   const [activeTemplate, setActiveTemplate] = useState(null);
   const [links, setLinks] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", dark);
-    localStorage.setItem("theme", dark ? "dark" : "light");
-  }, [dark]);
+  function toggleDark() {
+  const isDark = document.documentElement.classList.toggle("dark");
+  localStorage.setItem("theme", isDark ? "dark" : "light");
+  setDark(isDark);
+}
 
   function handleTemplateSelect(t) {
     setActiveTemplate(t);
@@ -131,7 +133,7 @@ export default function App() {
 
         {/* Bottom: user + controls */}
         <div className="border-t border-zinc-100 dark:border-zinc-800 px-2 py-3 space-y-1">
-          <button onClick={() => setDark((d) => !d)}
+          <button onClick={toggleDark}
             className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md text-[13px]
               text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">
             <span className="flex-shrink-0 text-sm">{dark ? "○" : "◑"}</span>
@@ -174,7 +176,7 @@ export default function App() {
             <span className="text-[13px] font-semibold text-zinc-800 dark:text-white">WA Sender</span>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => setDark((d) => !d)} className="text-zinc-400 hover:text-zinc-600 text-sm">{dark ? "○" : "◑"}</button>
+            <button onClick={toggleDark} className="text-zinc-400 hover:text-zinc-600 text-sm">{dark ? "○" : "◑"}</button>
             <button onClick={logout} className="text-[12px] text-zinc-500 hover:text-zinc-700">Out</button>
           </div>
         </div>

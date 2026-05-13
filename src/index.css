@@ -1,1 +1,26 @@
 @import "tailwindcss";
+@variant dark (&:where(.dark, .dark *));
+
+html {
+  color-scheme: light dark;
+}
+
+*,
+*::before,
+*::after {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-duration: 200ms;
+  transition-timing-function: ease;
+  transition-delay: 0ms;
+}
+
+/* Keep interactions instant*/
+button,
+input,
+select,
+textarea,
+a {
+  transition-property: background-color, border-color, color, opacity, transform;
+  transition-duration: 100ms;
+  transition-timing-function: ease;
+}
