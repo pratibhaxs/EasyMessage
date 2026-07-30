@@ -39,8 +39,8 @@ export default function AuthPage() {
 
         {/* Logo */}
         <div className="flex items-center gap-2 mb-8 justify-center">
-          <div className="w-7 h-7 rounded-lg bg-emerald-500 flex items-center justify-center text-white text-xs font-bold"></div>
-          <span className="text-[15px] font-semibold text-zinc-800 dark:text-white">EasyMessage</span>
+          <div className="w-7 h-7 rounded-lg bg-emerald-500 flex items-center justify-center text-white text-xs font-bold">W</div>
+          <span className="text-[15px] font-semibold text-zinc-800 dark:text-white">WA Sender</span>
         </div>
 
         {/* Card */}

@@ -102,8 +102,8 @@ export default function App() {
 
         {/* Logo */}
         <div className="flex items-center gap-2.5 px-3 h-11 border-b border-zinc-100 dark:border-zinc-800">
-          <div className="w-6 h-6 rounded-md bg-emerald-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0"></div>
-          {sidebarOpen && <span className="text-[13px] font-semibold text-zinc-800 dark:text-white truncate">EasyMessage</span>}
+          <div className="w-6 h-6 rounded-md bg-emerald-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">W</div>
+          {sidebarOpen && <span className="text-[13px] font-semibold text-zinc-800 dark:text-white truncate">WA Sender</span>}
         </div>
 
         {/* Nav */}
